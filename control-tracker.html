@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f42;
+    --accent: #4f8ef7;
+    --green: #3ecf8e;
+    --red: #f7604f;
+    --yellow: #f7c94f;
+    --text: #e8ecf5;
+    --muted: #6b7494;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(79,142,247,0.06) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(62,207,142,0.04) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 30px 0 25px;
+    position: relative;
+  }
+
+  header h1 {
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+
+  .date-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* Progress Ring */
+  .progress-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+
+  .ring-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+  }
+
+  .ring-container svg {
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 8; }
+  .ring-fg { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+
+  .ring-label {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    text-align: center;
+  }
+
+  .ring-label .pct { font-size: 1.6rem; font-weight: 900; }
+  .ring-label .lbl { font-size: 0.65rem; color: var(--muted); }
+
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    text-align: center;
+    min-width: 90px;
+  }
+
+  .stat-card .num { font-size: 1.5rem; font-weight: 900; }
+  .stat-card .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  /* Card Sections */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card h3::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+
+  /* Tasks */
+  .task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    transition: all 0.25s ease;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-item.done-task {
+    border-color: rgba(62,207,142,0.2);
+    background: rgba(62,207,142,0.05);
+  }
+
+  .task-item.done-task .task-name {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .task-name {
+    font-size: 0.95rem;
+    flex: 1;
+  }
+
+  .task-actions { display: flex; gap: 8px; }
+
+  .btn-toggle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .btn-toggle.done-btn { background: rgba(62,207,142,0.15); border-color: var(--green); }
+  .btn-toggle.undone-btn { background: rgba(247,96,79,0.1); border-color: rgba(247,96,79,0.3); }
+  .btn-toggle:hover { transform: scale(1.1); }
+
+  .btn-delete {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .btn-delete:hover { border-color: var(--red); color: var(--red); background: rgba(247,96,79,0.1); }
+
+  /* Add Task Input */
+  .add-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .add-row input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-row input:focus { border-color: var(--accent); }
+  .add-row input::placeholder { color: var(--muted); }
+
+  .btn-add {
+    background: linear-gradient(135deg, var(--accent), #3a7bd5);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn-add:hover { opacity: 0.9; transform: scale(1.02); }
+  .btn-add:active { transform: scale(0.98); }
+
+  /* Successes */
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 70px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--green); }
+  textarea::placeholder { color: var(--muted); }
+
+  .btn-save {
+    background: linear-gradient(135deg, var(--green), #2fb378);
+    color: #0d1a12;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: opacity 0.2s;
+  }
+
+  .btn-save:hover { opacity: 0.9; }
+
+  .success-list { list-style: none; margin-top: 12px; }
+
+  .success-list li {
+    background: rgba(62,207,142,0.07);
+    border: 1px solid rgba(62,207,142,0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .success-list li::before { content: '🏆'; font-size: 0.85rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* Charts */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 160px;
+  }
+
+  canvas { border-radius: 8px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #0d1a12;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.7rem; }
+    .stats-row { gap: 8px; }
+    .stat-card { min-width: 75px; padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Control Tracker</h1>
+  <p>تحكم في يومك، اصنع نجاحك</p>
+  <div class="date-badge" id="dateBadge"></div>
+</header>
+
+<!-- Progress Ring + Stats -->
+<div class="progress-section">
+  <div class="ring-container">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle class="ring-bg" cx="60" cy="60" r="50"/>
+      <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="50"
+        stroke-dasharray="314"
+        stroke-dashoffset="314"
+        stroke="url(#ringGrad)"/>
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#4f8ef7"/>
+          <stop offset="100%" stop-color="#3ecf8e"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="ring-label">
+      <div class="pct" id="ringPct" style="color:#4f8ef7">0%</div>
+      <div class="lbl">إنجاز اليوم</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="statDone" style="color:var(--green)">0</div>
+      <div class="lbl">مكتمل</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statLeft" style="color:var(--red)">0</div>
+      <div class="lbl">متبقي</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statStreak" style="color:var(--yellow)">0🔥</div>
+      <div class="lbl">أيام متتالية</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tasks -->
+<div class="card">
+  <h3>المهام اليومية</h3>
+  <div id="tasksList"></div>
+  <div class="add-row">
+    <input type="text" id="newTaskInput" placeholder="أضف مهمة جديدة...">
+    <button class="btn-add" onclick="addNewTask()">+ أضف</button>
+  </div>
+</div>
+
+<!-- Successes -->
+<div class="card">
+  <h3>نجاحات اليوم</h3>
+  <textarea id="successInput" placeholder="اكتب إنجازك هنا..."></textarea>
+  <button class="btn-save" onclick="addSuccess()">💾 حفظ الإنجاز</button>
+  <ul class="success-list" id="successList"></ul>
+</div>
+
+<!-- Weekly Chart -->
+<div class="card">
+  <h3>التقدم الأسبوعي</h3>
+  <div class="chart-wrap">
+    <canvas id="weekChart"></canvas>
+  </div>
+</div>
+
+<!-- Monthly Chart -->
+<div class="card">
+  <h3>التقدم الشهري</h3>
+  <div class="chart-wrap">
+    <canvas id="monthChart"></canvas>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const today = new Date().toISOString().split('T')[0];
+
+  // Show date
+  document.getElementById('dateBadge').textContent = new Date().toLocaleDateString('ar-EG', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const defaultTasks = [
+    { name: "تمرين جسم 10–15 دقيقة", done: false },
+    { name: "كتابة 10 دقائق", done: false },
+    { name: "لا الإباحية اليوم", done: false },
+    { name: "أهم مهمتين شغل اليوم", done: false },
+    { name: "روتين قبل النوم قبل 1", done: false }
+  ];
+
+  let tasks = JSON.parse(localStorage.getItem('tasks')) || defaultTasks;
+  let successes = JSON.parse(localStorage.getItem('successes')) || {};
+  let weekData = JSON.parse(localStorage.getItem('weekData')) || {};
+
+  // ─── Save & Render Tasks ──────────────────────────────
+  function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    renderTasks();
+    updateProgress();
+  }
+
+  function toggleTask(index) {
+    tasks[index].done = !tasks[index].done;
+    saveTasks();
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('tasksList');
+    list.innerHTML = '';
+    tasks.forEach((task, i) => {
+      const div = document.createElement('div');
+      div.className = `task-item ${task.done ? 'done-task' : ''}`;
+      div.innerHTML = `
+        <span class="task-name">${escapeHtml(task.name)}</span>
+        <div class="task-actions">
+          <button class="btn-toggle ${task.done ? 'done-btn' : 'undone-btn'}"
+            onclick="toggleTask(${i})" title="${task.done ? 'إلغاء' : 'إتمام'}">
+            ${task.done ? '✅' : '⭕'}
+          </button>
+          <button class="btn-delete" onclick="deleteTask(${i})" title="حذف">🗑</button>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  function addNewTask() {
+    const input = document.getElementById('newTaskInput');
+    const val = input.value.trim();
+    if (val !== '') {
+      tasks.push({ name: val, done: false });
+      input.value = '';
+      saveTasks();
+      showToast('تمت إضافة المهمة ✨');
+    }
+  }
+
+  function deleteTask(index) {
+    tasks.splice(index, 1);
+    saveTasks();
+  }
+
+  // Enter key to add task
+  document.getElementById('newTaskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addNewTask();
+  });
+
+  // ─── Successes ────────────────────────────────────────
+  function addSuccess() {
+    const input = document.getElementById('successInput');
+    const val = input.value.trim();
+    if (val !== '') {
+      if (!successes[today]) successes[today] = [];
+      successes[today].push(val);
+      localStorage.setItem('successes', JSON.stringify(successes));
+      renderSuccess();
+      input.value = '';
+      showToast('تم حفظ الإنجاز 🏆');
+    }
+  }
+
+  function renderSuccess() {
+    const ul = document.getElementById('successList');
+    ul.innerHTML = '';
+    (successes[today] || []).forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = s;
+      ul.appendChild(li);
+    });
+  }
+
+  // ─── Progress ─────────────────────────────────────────
+  function updateProgress() {
+    const total = tasks.length;
+    const doneCount = tasks.filter(t => t.done).length;
+
+    // FIX: avoid division by zero
+    const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+    // Ring
+    const circumference = 314;
+    const offset = circumference - (pct / 100) * circumference;
+    document.getElementById('ringFg').style.strokeDashoffset = offset;
+    const pctEl = document.getElementById('ringPct');
+    pctEl.textContent = pct + '%';
+    pctEl.style.color = pct >= 70 ? '#3ecf8e' : pct >= 40 ? '#f7c94f' : '#f7604f';
+
+    // Stats
+    document.getElementById('statDone').textContent = doneCount;
+    document.getElementById('statLeft').textContent = total - doneCount;
+
+    // Save daily data
+    weekData[today] = pct;
+    localStorage.setItem('weekData', JSON.stringify(weekData));
+
+    // Streak
+    updateStreak();
+    renderCharts();
+  }
+
+  function updateStreak() {
+    const dates = Object.keys(weekData).sort();
+    let streak = 0;
+    let check = new Date();
+    for (let i = 0; i <= 60; i++) {
+      const d = check.toISOString().split('T')[0];
+      if (weekData[d] !== undefined && weekData[d] >= 50) {
+        streak++;
+        check.setDate(check.getDate() - 1);
+      } else { break; }
+    }
+    document.getElementById('statStreak').textContent = streak + '🔥';
+  }
+
+  // ─── Charts ───────────────────────────────────────────
+  let weekChartInst, monthChartInst;
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#6b7494', font: { family: 'Tajawal', size: 11 } }, grid: { color: '#1e2230' } },
+      y: { beginAtZero: true, max: 100, ticks: { color: '#6b7494', font: { family: 'Tajawal', size: 11 } }, grid: { color: '#1e2230' } }
+    }
+  };
+
+  function renderCharts() {
+    const sortedDates = Object.keys(weekData).sort();
+    const last7 = sortedDates.slice(-7);
+    const last30 = sortedDates.slice(-30);
+
+    // Week bar chart
+    const wCtx = document.getElementById('weekChart').getContext('2d');
+    if (weekChartInst) weekChartInst.destroy();
+    weekChartInst = new Chart(wCtx, {
+      type: 'bar',
+      data: {
+        labels: last7.map(d => d.slice(5)),
+        datasets: [{
+          data: last7.map(d => weekData[d]),
+          backgroundColor: last7.map(d => weekData[d] >= 70 ? 'rgba(62,207,142,0.7)' : 'rgba(247,96,79,0.6)'),
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: { ...chartDefaults }
+    });
+
+    // Month line chart
+    const mCtx = document.getElementById('monthChart').getContext('2d');
+    if (monthChartInst) monthChartInst.destroy();
+    monthChartInst = new Chart(mCtx, {
+      type: 'line',
+      data: {
+        labels: last30.map(d => d.slice(5)),
+        datasets: [{
+          data: last30.map(d => weekData[d]),
+          borderColor: '#4f8ef7',
+          backgroundColor: 'rgba(79,142,247,0.12)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#4f8ef7',
+          pointRadius: 3
+        }]
+      },
+      options: { ...chartDefaults }
+    });
+  }
+
+  // ─── Toast ────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ─── Helpers ──────────────────────────────────────────
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── Init ─────────────────────────────────────────────
+  renderTasks();
+  renderSuccess();
+  updateProgress();
+</script>
+</body>
+</html>
